@@ -13,10 +13,11 @@ import androidx.navigation.NavHostController
 
 @Composable
 fun GuessNumberScreen(navController: NavHostController) {
-    // Estado: número secreto, intento del usuario y mensaje de resultado
+    // Estado: número secreto, intento del usuario, mensaje de resultado y error de validación
     var secretNumber by remember { mutableStateOf((1..10).random()) }
     var attempt      by remember { mutableStateOf("") }
     var resultMsg    by remember { mutableStateOf("") }
+    var inputError   by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -29,22 +30,46 @@ fun GuessNumberScreen(navController: NavHostController) {
 
         OutlinedTextField(
             value = attempt,
-            onValueChange = { attempt = it },
+            onValueChange = { new ->
+                // Filtrar para que solo queden dígitos
+                val filtered = new.filter { it.isDigit() }
+                attempt = filtered
+
+                // Validar rango si hay valor numérico
+                inputError = when {
+                    filtered.isEmpty() -> null
+                    else -> {
+                        val n = filtered.toIntOrNull()
+                        if (n == null || n !in 1..10) "Ingresa un número entre 1 y 10" else null
+                    }
+                }
+            },
             label = { Text("Tu intento") },
+            isError = inputError != null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
+        if (inputError != null) {
+            Text(
+                text = inputError!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.Start)
+            )
+        }
 
         Button(
             onClick = {
                 val guess = attempt.toIntOrNull()
                 resultMsg = when {
-                    guess == null            -> "Ingresa un número válido"
-                    guess == secretNumber    -> "¡Correcto!"
-                    else                     -> "Intenta de nuevo"
+                    guess == null                        -> "Ingresa un número válido"
+                    guess !in 1..10                      -> "El número debe estar entre 1 y 10"
+                    guess == secretNumber                -> "¡Correcto!"
+                    else                                 -> "Intenta de nuevo"
                 }
             },
+            enabled = inputError == null && attempt.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Comprobar")
@@ -55,6 +80,7 @@ fun GuessNumberScreen(navController: NavHostController) {
                 secretNumber = (1..10).random()
                 attempt      = ""
                 resultMsg    = ""
+                inputError   = null
             },
             modifier = Modifier.fillMaxWidth()
         ) {
