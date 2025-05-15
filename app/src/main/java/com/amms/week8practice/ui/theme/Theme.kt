@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.amms.week8practice.ui.theme.AppTypography
 
 private val LightColors = lightColorScheme(
     primary      = tealMid,
@@ -21,8 +22,8 @@ private val LightColors = lightColorScheme(
 fun AppTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = LightColors,
-        typography = Typography,
-        shapes = Shapes,
-        content = content
+        typography  = AppTypography,
+        shapes      = Shapes,
+        content     = content
     )
 }
