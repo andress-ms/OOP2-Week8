@@ -1,4 +1,3 @@
-// HomeScreen.kt
 package com.amms.week8practice.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -11,24 +10,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 
+/**
+ * Pantalla de menú principal.
+ * - Ofrece botones para navegar a cada ejercicio.
+ */
 @Composable
 fun HomeScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxSize()             // Ocupa toda la pantalla
+            .padding(16.dp),           // Padding interior
+        verticalArrangement = Arrangement.Center,        // Centrar verticalmente
+        horizontalAlignment = Alignment.CenterHorizontally // Centrar horizontalmente
     ) {
-        Text("Selecciona un ejercicio", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(24.dp))
+        // Título
+        Text(
+            text = "Selecciona un ejercicio",
+            style = MaterialTheme.typography.headlineSmall
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Botón para ir al ejercicio de adivinar número
         Button(
             onClick = { navController.navigate("guess") },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Ejercicio 1: Adivina el número")
         }
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Botón para ir al ejercicio de tabla de multiplicar
         Button(
             onClick = { navController.navigate("multiply") },
             modifier = Modifier.fillMaxWidth()
