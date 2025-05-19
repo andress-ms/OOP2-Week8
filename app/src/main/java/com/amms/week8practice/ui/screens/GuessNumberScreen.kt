@@ -16,61 +16,72 @@ import androidx.navigation.NavHostController
  * - Genera un número secreto aleatorio entre 1 y 10.
  * - Permite al usuario introducir un intento (solo dígitos).
  * - Valida que el número esté en el rango 1–10.
- * - Comprueba si el intento coincide con el secreto y muestra un mensaje.
- * - Permite reiniciar el juego y regresar al menú.
+ * - Comprueba si el intento coincide con el secreto y muestra:
+ *     • “¡Correcto!” (y la cantidad de intentos)
+ *     • “Número secreto es mayor” o “Número secreto es menor”
+ * - Lleva un contador de intentos y lo muestra en pantalla.
+ * - Al fallar 3 veces, reinicia el juego (nuevo número + contador a 0).
+ * - Botón para reiniciar manualmente y para volver al menú.
  */
 @Composable
 fun GuessNumberScreen(navController: NavHostController) {
-    // Estado del número secreto (persistente mientras Compose lo recuerde).
+    // 1️⃣ Estado del número secreto (entre 1 y 10)
     var secretNumber by remember { mutableStateOf((1..10).random()) }
-
-    // Estado del texto introducido por el usuario.
+    // 2️⃣ Estado del texto ingresado por el usuario
     var attempt by remember { mutableStateOf("") }
-
-    // Mensaje de resultado tras pulsar "Comprobar".
+    // 3️⃣ Mensaje de resultado (“Correcto”, “mayor”, “menor”)
     var resultMsg by remember { mutableStateOf("") }
-
-    // Mensaje de error en la validación de rango.
+    // 4️⃣ Mensaje de error de validación de rango
     var inputError by remember { mutableStateOf<String?>(null) }
+    // 5️⃣ Contador de intentos realizados
+    var attemptsCount by remember { mutableStateOf(0) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()      // Ocupa toda la pantalla
-            .padding(16.dp),    // Padding interior
+            .padding(16.dp),    // Espaciado interior
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Título del ejercicio
+        // Título
         Text(
             text = "Adivina el número (1–10)",
             style = MaterialTheme.typography.headlineSmall
+        )
+
+        // Mostrar contador de intentos
+        Text(
+            text = "Intentos: $attemptsCount",
+            style = MaterialTheme.typography.bodyLarge
         )
 
         // Campo de texto para el intento
         OutlinedTextField(
             value = attempt,
             onValueChange = { new ->
-                // Filtrar sólo dígitos
+                // Filtrar solo dígitos
                 val filtered = new.filter { it.isDigit() }
                 attempt = filtered
 
-                // Validar rango si hay un número
+                // Validar que, si hay texto, esté entre 1 y 10
                 inputError = when {
                     filtered.isEmpty() -> null
                     else -> {
                         val n = filtered.toIntOrNull()
-                        if (n == null || n !in 1..10) "Ingresa un número entre 1 y 10" else null
+                        if (n == null || n !in 1..10) {
+                            "Ingresa un número entre 1 y 10"
+                        } else null
                     }
                 }
             },
             label = { Text("Tu intento") },
-            isError = inputError != null,    // Marca el campo si hay error
+            isError = inputError != null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Texto de error, si aplica
+        // Mensaje de error de validación
         inputError?.let { err ->
             Text(
                 text = err,
@@ -83,34 +94,60 @@ fun GuessNumberScreen(navController: NavHostController) {
         // Botón para comprobar el intento
         Button(
             onClick = {
+                // Intento como Int
                 val guess = attempt.toIntOrNull()
-                resultMsg = when {
-                    guess == null         -> "Ingresa un número válido"
-                    guess !in 1..10       -> "El número debe estar entre 1 y 10"
-                    guess == secretNumber -> "¡Correcto!"
-                    else                  -> "Intenta de nuevo"
+                // Solo procesar si es válido
+                if (guess != null && guess in 1..10) {
+                    attemptsCount++  // Incrementar contador
+
+                    resultMsg = when {
+                        guess == secretNumber -> {
+                            "¡Correcto! Lo lograste en $attemptsCount intentos."
+                        }
+                        guess < secretNumber -> {
+                            "Número secreto es mayor que $guess."
+                        }
+                        else -> {
+                            "Número secreto es menor que $guess."
+                        }
+                    }
+
+                    // Si agotó 3 intentos sin acertar, reiniciar automáticamente
+                    if (guess != secretNumber && attemptsCount >= 3) {
+                        // Guardar mensaje de reinicio y nuevo número
+                        resultMsg += "\nSe han agotado 3 intentos. Juego reiniciado."
+                        secretNumber = (1..10).random()
+                        attemptsCount = 0
+                    }
+                } else {
+                    // No debería ocurrir si el botón está deshabilitado, pero por si acaso:
+                    resultMsg = "Ingresa un número válido entre 1 y 10."
                 }
+                // Limpiar el campo de texto para el siguiente intento
+                attempt = ""
             },
-            enabled = inputError == null && attempt.isNotEmpty(), // Deshabilita si hay error
+            // Solo habilitar si no hay error y el campo no está vacío
+            enabled = inputError == null && attempt.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Comprobar")
         }
 
-        // Botón para reiniciar el juego
+        // Botón para reiniciar manualmente
         Button(
             onClick = {
                 secretNumber = (1..10).random()
-                attempt      = ""
-                resultMsg    = ""
-                inputError   = null
+                attempt = ""
+                resultMsg = ""
+                inputError = null
+                attemptsCount = 0
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Reiniciar juego")
         }
 
-        // Mostrar el resultado (acierto/fallo)
+        // Mostrar mensaje de resultado (acierto, pista o reinicio automático)
         if (resultMsg.isNotEmpty()) {
             Text(
                 text = resultMsg,
@@ -118,7 +155,6 @@ fun GuessNumberScreen(navController: NavHostController) {
             )
         }
 
-        // Espacio flexible para empujar el botón de abajo
         Spacer(modifier = Modifier.weight(1f))
 
         // Botón para volver al menú principal

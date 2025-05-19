@@ -9,23 +9,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import java.text.DecimalFormat
 
 /**
- * Ejercicio 2: Tabla de multiplicar
- *
- * - Permite ingresar un número base.
- * - Al pulsar "Generar tabla", muestra las líneas de la tablade 1× hasta 12×.
- * - Valida que el input sea un número entero.
- * - Usa MaterialTheme y espaciados uniformes.
+ * Ejercicio 2 modificado: Tabla de multiplicar acepta negativos y decimales.
  */
 @Composable
 fun MultiplicationScreen(navController: NavHostController) {
     // Estado del texto del número base
     var baseInput by remember { mutableStateOf("") }
-    // Estado de las líneas generadas (lista de Strings)
+    // Estado de las líneas de salida
     var tableLines by remember { mutableStateOf<List<String>>(emptyList()) }
     // Mensaje de error de validación
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    // Para formatear con 2 decimales
+    val fmt = remember { DecimalFormat("#.##") }
 
     Column(
         modifier = Modifier
@@ -34,35 +32,37 @@ fun MultiplicationScreen(navController: NavHostController) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Título
         Text(
             text = "Tabla de multiplicar",
             style = MaterialTheme.typography.headlineSmall
         )
 
-        // Input del número base
         OutlinedTextField(
             value = baseInput,
             onValueChange = { new ->
-                baseInput = new.filter { it.isDigit() } // Solo dígitos
+                // Permitimos cualquier carácter; validamos al generar la tabla
+                baseInput = new
             },
-            label = { Text("Número base") },
+            label = { Text("Número base (p. ej. -2.5)") },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Botón para generar la tabla
         Button(
             onClick = {
-                val base = baseInput.toIntOrNull()
+                // Intentamos parsear a Double (soporta negativos y decimales)
+                val base = baseInput.toDoubleOrNull()
                 if (base == null) {
-                    errorMsg = "Ingresa un número válido"
+                    errorMsg = "Ingresa un número válido (p. ej. -3.14)"
                     tableLines = emptyList()
                 } else {
                     errorMsg = null
-                    // Genera líneas 1 a 12
-                    tableLines = (1..12).map { "$base × $it = ${base * it}" }
+                    // Generamos la tabla del 1 al 12 formateando resultados
+                    tableLines = (1..12).map { i ->
+                        val product = base * i
+                        "${fmt.format(base)} × $i = ${fmt.format(product)}"
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -70,7 +70,7 @@ fun MultiplicationScreen(navController: NavHostController) {
             Text("Generar tabla")
         }
 
-        // Texto de error si aplica
+        // Mostrar error si existe
         errorMsg?.let { err ->
             Text(
                 text = err,
@@ -80,7 +80,7 @@ fun MultiplicationScreen(navController: NavHostController) {
             )
         }
 
-        // Muestra cada línea de la tabla
+        // Mostrar cada línea de la tabla
         tableLines.forEach { line ->
             Text(
                 text = line,
@@ -89,10 +89,8 @@ fun MultiplicationScreen(navController: NavHostController) {
             )
         }
 
-        // Empuja el botón de volver al menú hacia abajo
         Spacer(modifier = Modifier.weight(1f))
 
-        // Botón para regresar
         Button(onClick = { navController.popBackStack() }) {
             Text("Volver al menú")
         }
